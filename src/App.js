@@ -45,14 +45,14 @@ function App() {
     setShowAddFriend(false);
   } 
 
-  function addExpense() {
-    friends.map(friend => (
-      friend.id === selectedFriend ? (
-        {...friend, balance:selectedFriend.balance}
-      ) : (
-        friend
-      )
-    ))
+  function handleSplitBill(value) {
+    setFriends(friends => (
+      friends.map(friend => (
+        friend.id === selectedFriend.id ? {...friend, balance: friend.balance + value} : friend
+      ))
+    ));
+
+    setSelectedFriend(null);
   }
 
 
@@ -72,7 +72,7 @@ function App() {
         </Button>  
       </div>
 
-      {selectedFriend && <SplitBill selectedFriend={selectedFriend} onAddExpense={addExpense} />}
+      {selectedFriend && <SplitBill selectedFriend={selectedFriend} onSplitBill={handleSplitBill} />}
       
     </div>
   );
@@ -177,23 +177,19 @@ function AddFriend({ onAddfriend }) {
   );
 }
 
-function SplitBill({ selectedFriend, onAddExpense }) {
+function SplitBill({ selectedFriend, onSplitBill }) {
 
   const [billValue, setBillValue] = useState(0);
   const [yourExpense, setYourExpense] = useState(0);
-  const friendExpense = billValue - yourExpense;
+  const friendExpense = billValue ? billValue - yourExpense : 0;
   const [whoIsPaying, setWhoIsPaying] = useState("You");
 
   function handleSubmit(e) {
     e.preventDefault();
 
-    whoIsPaying !== "You" ? (
-      selectedFriend.balance += friendExpense
-    ) : (
-      selectedFriend.balance -= friendExpense
-    ); 
+    if(!billValue || !yourExpense) return;
 
-    onAddExpense();
+    onSplitBill(whoIsPaying === "You" ? friendExpense : -yourExpense);
   }
 
   return (
@@ -212,7 +208,7 @@ function SplitBill({ selectedFriend, onAddExpense }) {
         type="text" 
         value={yourExpense} 
         onChange={e => setYourExpense(
-          Number(e.target.value) )} />
+          Number(e.target.value) > billValue ? yourExpense : Number(e.target.value))} />
 
       <label>👫 {selectedFriend.name}'s expense</label>
       <input type="text" disabled  value={friendExpense} />
